@@ -19,9 +19,9 @@ pygame.display.set_caption("Kitty Cleaning")
 # IMAGES
 # =====================
 
-chat_img = pygame.image.load("chat.png")
-dechet_img = pygame.image.load("dechet.png")
-poubelle_img = pygame.image.load("poubelle.png")
+chat_img = pygame.image.load("chat-fond-transparent.png")
+dechet_img = pygame.image.load("dechet-fond-transparent.png")
+poubelle_img = pygame.image.load("poubelle-fond-transparent.png")
 mur_img = pygame.image.load("mur.png")
 
 # =====================
