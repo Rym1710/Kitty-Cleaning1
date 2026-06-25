@@ -1,12 +1,14 @@
 import pygame
 
 pygame.init()
+pygame.mixer.init()
 
 # =====================
 # CONFIGURATION
 # =====================
 
 TILE_SIZE = 64
+
 WIDTH = 10 * TILE_SIZE
 HEIGHT = 8 * TILE_SIZE
 
@@ -44,6 +46,7 @@ blocks = set()
 player = None
 
 for y, row in enumerate(level):
+
     for x, cell in enumerate(row):
 
         if cell == "#":
@@ -58,32 +61,46 @@ for y, row in enumerate(level):
         elif cell == "X":
             targets.add((x, y))
 
+# =====================
+# VARIABLES
+# =====================
+
 moves = 0
 win = False
+game_over = False
 
-font = pygame.font.SysFont(None, 48)
+font = pygame.font.SysFont(None, 42)
 clock = pygame.time.Clock()
+
+# =====================
+# TIMER (1 minute)
+# =====================
+
+TIME_LIMIT = 60
+start_time = pygame.time.get_ticks()
 
 # =====================
 # DÉPLACEMENT
 # =====================
 
 def move_player(dx, dy):
+
     global player
     global moves
     global win
+    global game_over
 
-    if win:
+    if win or game_over:
         return
 
     nx = player[0] + dx
     ny = player[1] + dy
 
-    # mur
+    # Mur
     if (nx, ny) in walls:
         return
 
-    # déchet
+    # Déchet
     if (nx, ny) in blocks:
 
         bx = nx + dx
@@ -98,12 +115,12 @@ def move_player(dx, dy):
         blocks.remove((nx, ny))
         blocks.add((bx, by))
 
-    # déplacement du joueur
+    # Déplacement joueur
     player = (nx, ny)
 
     moves += 1
 
-    # victoire
+    # Vérification victoire
     if blocks == targets:
         win = True
 
@@ -115,7 +132,20 @@ running = True
 
 while running:
 
-    # événements
+    # =====================
+    # TIMER
+    # =====================
+
+    elapsed = (pygame.time.get_ticks() - start_time) // 1000
+    time_left = max(0, TIME_LIMIT - elapsed)
+
+    if time_left == 0 and not win:
+        game_over = True
+
+    # =====================
+    # ÉVÉNEMENTS
+    # =====================
+
     for event in pygame.event.get():
 
         if event.type == pygame.QUIT:
@@ -135,11 +165,18 @@ while running:
             elif event.key == pygame.K_RIGHT:
                 move_player(1, 0)
 
-    # fond
+    # =====================
+    # FOND
+    # =====================
+
     screen.fill((255, 226, 168))
 
-    # grille + murs + poubelles
+    # =====================
+    # CARTE
+    # =====================
+
     for y in range(len(level)):
+
         for x in range(len(level[0])):
 
             rect = pygame.Rect(
@@ -157,45 +194,78 @@ while running:
             )
 
             if (x, y) in walls:
+
                 screen.blit(
                     mur_img,
                     (x * TILE_SIZE, y * TILE_SIZE)
                 )
 
             if (x, y) in targets:
+
                 screen.blit(
                     poubelle_img,
                     (x * TILE_SIZE, y * TILE_SIZE)
                 )
 
-    # déchets
+    # =====================
+    # DÉCHETS
+    # =====================
+
     for bx, by in blocks:
+
         screen.blit(
             dechet_img,
-            (bx * TILE_SIZE, by * TILE_SIZE)
+            (
+                bx * TILE_SIZE,
+                by * TILE_SIZE
+            )
         )
 
-    # joueur
+    # =====================
+    # CHAT
+    # =====================
+
     screen.blit(
         chat_img,
-        (player[0] * TILE_SIZE,
-         player[1] * TILE_SIZE)
+        (
+            player[0] * TILE_SIZE,
+            player[1] * TILE_SIZE
+        )
     )
 
-    # compteur
-    txt = font.render(
+    # =====================
+    # AFFICHAGE TEXTE
+    # =====================
+
+    moves_text = font.render(
         f"Coups : {moves}",
         True,
         (0, 0, 0)
     )
-    screen.blit(txt, (10, 10))
 
-    # victoire
+    screen.blit(moves_text, (10, 10))
+
+    minutes = time_left // 60
+    seconds = time_left % 60
+
+    timer_text = font.render(
+        f"{minutes:02}:{seconds:02}",
+        True,
+        (255, 0, 0)
+    )
+
+    screen.blit(timer_text, (10, 50))
+
+    # =====================
+    # VICTOIRE
+    # =====================
+
     if win:
 
         overlay = pygame.Surface((WIDTH, HEIGHT))
-        overlay.set_alpha(150)
+        overlay.set_alpha(170)
         overlay.fill((0, 0, 0))
+
         screen.blit(overlay, (0, 0))
 
         msg = font.render(
@@ -212,9 +282,33 @@ while running:
             )
         )
 
+    # =====================
+    # DÉFAITE
+    # =====================
+
+    if game_over:
+
+        overlay = pygame.Surface((WIDTH, HEIGHT))
+        overlay.set_alpha(170)
+        overlay.fill((0, 0, 0))
+
+        screen.blit(overlay, (0, 0))
+
+        msg = font.render(
+            "TEMPS ÉCOULÉ !",
+            True,
+            (255, 0, 0)
+        )
+
+        screen.blit(
+            msg,
+            (
+                WIDTH // 2 - msg.get_width() // 2,
+                HEIGHT // 2
+            )
+        )
+
     pygame.display.flip()
     clock.tick(60)
 
 pygame.quit()
-
-
